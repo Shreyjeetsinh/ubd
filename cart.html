@@ -6,10 +6,27 @@
   <title>Cart</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    .product-img {
+      max-height: 15rem;
+      object-fit: contain;
+    }
+    .card-price-details {
+      position: sticky;
+      top: 80px;
+    }
+    @media (max-width: 991px) {
+      .card-price-details {
+        position: static;
+        top: auto;
+      }
+    }
+  </style>
 </head>
 <body>
   <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg bg-body-tertiary bg-dark" data-bs-theme="dark">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
       <a class="navbar-brand" href="#">UbD</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
@@ -28,34 +45,32 @@
   </nav>
 
   <!-- Cart Container -->
-  <div class="container">
-    <h1 class="text-center my-4">Shopping Bag</h1>
-    <hr>
-
+  <div class="container my-4">
+    <h1 class="text-center mb-4">Shopping Bag</h1>
     <div class="row">
-      <!-- Left side: Products -->
-      <div class="col-md-9" id="cartContainer"></div>
-
-      <!-- Right side: Price Details -->
-      <div class="col-md-3">
-        <h2 class="text-center">Price Details</h2>
-        <hr>
-        <div class="row">
-          <p class="col-md-6">Order Value</p>
-          <p class="col-md-6 text-end" id="orderVal">₹0</p>
-        </div>
-        <div class="row">
-          <p class="col-md-6">Delivery Fee</p>
-          <p class="col-md-6 text-end" id="fee">₹20</p>
-        </div>
-        <div class="row">
-          <h5 class="col-md-6">Total</h5>
-          <h5 class="col-md-6 text-end" id="totalVal">₹0</h5>
-        </div>
-        <div class="text-center mt-4">
-          <button class="btn btn-dark w-100"onclick="proceedCheckout()">Proceed to Checkout</button>
+      <!-- Price Details (Right sidebar on desktop, top on mobile) -->
+      <div class="col-12 col-lg-4 mb-4 order-1 order-lg-2">
+        <div class="card card-price-details p-3">
+          <h2 class="text-center">Price Details</h2>
+          <hr>
+          <div class="d-flex justify-content-between">
+            <span>Order Value</span>
+            <span id="orderVal">₹0</span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span>Delivery Fee</span>
+            <span id="fee">₹20</span>
+          </div>
+          <div class="d-flex justify-content-between fw-bold mt-3">
+            <span>Total</span>
+            <span id="totalVal">₹0</span>
+          </div>
+          <button class="btn btn-dark w-100 mt-4" onclick="proceedCheckout()">Proceed to Checkout</button>
         </div>
       </div>
+
+      <!-- Products -->
+      <div class="col-12 col-lg-8 order-2 order-lg-1" id="cartContainer"></div>
     </div>
   </div>
 
@@ -67,91 +82,91 @@
     let totalVal = document.getElementById("totalVal");
     let fee = document.getElementById("fee");
 
-    if (cart.length === 0) {
-      container.innerHTML = "<h3 class='text p-5'>Your cart is empty 🛒</h3>";
-      orderVal.innerText = "₹0";
-      totalVal.innerText = "₹0";
-      fee.innerText = "₹0";
-    } else {
+    function renderCart() {
+      container.innerHTML = '';
+      if (cart.length === 0) {
+        container.innerHTML = "<h3 class='text-center p-5'>Your cart is empty 🛒</h3>";
+        orderVal.innerText = "₹0";
+        totalVal.innerText = "₹0";
+        fee.innerText = "₹0";
+        return;
+      }
+
       let subtotal = 0;
 
       cart.forEach((item, i) => {
         subtotal += item.price * item.qty;
 
-        container.innerHTML += `
-          <div class="row mt-5 border-bottom pb-3">
-            <div class="col-md-3 text-center">
-              <img src="${item.img}" alt="Product Image" style="height:20em;" class="img-fluid">
-            </div>
-            <div class="col-md-6">
-              <h2>${item.title}</h2>
-              <p class="text-muted">${item.des}</p>
-              <h4>₹${item.price * item.qty}</h4>
-              <p class="text-success">In Stock</p>
-              <p>${item.color}</p>
-              <p>Size: ${item.size}</p>
-              <div class="d-flex align-items-center mb-3">
-                <button class="btn btn-outline-dark" onclick="changeQty(${i}, -1)">-</button>
-                <span class="px-3">${item.qty}</span>
-                <button class="btn btn-outline-dark" onclick="changeQty(${i}, 1)">+</button>
-                <button class="btn btn-light btn-sm mx-3" onclick="removeFromCart(${i})">
-                  <i class="bi bi-trash"></i>
-                </button>
-              </div>
+        const productHTML = document.createElement("div");
+        productHTML.className = "row mb-4 border-bottom pb-3 align-items-center";
+        productHTML.innerHTML = `
+          <div class="col-12 col-md-4 text-center mb-3 mb-md-0">
+            <img src="${item.img}" alt="Product Image" class="img-fluid product-img">
+          </div>
+          <div class="col-12 col-md-8">
+            <h4>${item.title}</h4>
+            <p class="text-muted">${item.des}</p>
+            <h5>₹${item.price * item.qty}</h5>
+            <p class="text-success">In Stock</p>
+            <p>Color: ${item.color}</p>
+            <p>Size: ${item.size}</p>
+            <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+              <button class="btn btn-outline-dark btn-sm" onclick="changeQty(${i}, -1)">-</button>
+              <span class="px-2">${item.qty}</span>
+              <button class="btn btn-outline-dark btn-sm" onclick="changeQty(${i}, 1)">+</button>
+              <button class="btn btn-light btn-sm ms-2" onclick="removeFromCart(${i})">
+                <i class="bi bi-trash"></i>
+              </button>
             </div>
           </div>
         `;
+        container.appendChild(productHTML);
       });
 
-      // Update totals
       orderVal.innerText = `₹${subtotal}`;
       totalVal.innerText = `₹${subtotal + 20}`;
     }
 
-    // Change quantity
     function changeQty(index, delta) {
       cart[index].qty += delta;
-      if (cart[index].qty <= 0) {
-        cart.splice(index, 1);
-      }
+      if (cart[index].qty <= 0) cart.splice(index, 1);
       localStorage.setItem("cart", JSON.stringify(cart));
-      location.reload();
+      renderCart();
     }
 
-    // Remove item
     function removeFromCart(index) {
       cart.splice(index, 1);
       localStorage.setItem("cart", JSON.stringify(cart));
-      location.reload();
+      renderCart();
     }
+
     function proceedCheckout() {
-  if (cart.length === 0) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Your cart is empty !',
-      text: 'Please add some items before checkout.',
-      confirmButtonColor: '#212529'
-    });
-    return;
-  }
+      if (cart.length === 0) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Your cart is empty!',
+          text: 'Please add some items before checkout.',
+          confirmButtonColor: '#212529'
+        });
+        return;
+      }
 
-  Swal.fire({
-    icon: 'success',
-    title: 'Order Confirmed !',
-    text: 'Thank you for shopping with us! Your order has been placed successfully.',
-    confirmButtonText: 'OK',
-    confirmButtonColor: '#212529'
-  }).then(() => {
-  localStorage.removeItem("cart");
+      Swal.fire({
+        icon: 'success',
+        title: 'Order Confirmed!',
+        text: 'Thank you for shopping with us! Your order has been placed successfully.',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#212529'
+      }).then(() => {
+        localStorage.removeItem("cart");
+        window.location.href = "index.html"; // redirect home
+      });
+    }
 
-    // Redirect to home page
-    window.location.href = "index.html"; // change this to your home page URL
-  });
-}
-
+    renderCart();
   </script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
